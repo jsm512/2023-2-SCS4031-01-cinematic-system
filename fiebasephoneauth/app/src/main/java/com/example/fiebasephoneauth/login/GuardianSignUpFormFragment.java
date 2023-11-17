@@ -1,6 +1,5 @@
 package com.example.fiebasephoneauth.login;
 
-import android.content.Intent;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -14,13 +13,17 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 
-import com.example.fiebasephoneauth.GuardianInfo;
 import com.example.fiebasephoneauth.R;
-import com.google.firebase.database.DataSnapshot;
-import com.google.firebase.database.DatabaseError;
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
+import com.google.firebase.auth.AuthResult;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
-import com.google.firebase.database.ValueEventListener;
+import com.google.firebase.firestore.DocumentReference;
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.SetOptions;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -126,38 +129,57 @@ public class GuardianSignUpFormFragment extends Fragment implements View.OnClick
 
         if (name.isEmpty() || phoneNum.isEmpty() || ID.isEmpty() || password.isEmpty() || passwordConfirm.isEmpty()){
             Toast.makeText(getActivity(), "사용자 정보를 모두 입력해주세요!", Toast.LENGTH_SHORT).show();
+            return;
         }
-        else if(!password.equals(passwordConfirm)){
+        if(!password.equals(passwordConfirm)){
             Toast.makeText(getActivity(), "비밀번호가 일치하지 않습니다.", Toast.LENGTH_SHORT).show();
+            return;
         }
-        else{
-            mPostreference.child("Guardian_list").addListenerForSingleValueEvent(new ValueEventListener() {
-                @Override
-                public void onDataChange(@NonNull DataSnapshot snapshot) {
-                    if(snapshot.hasChild(ID)){
-                        Toast.makeText(getActivity(), "이미 등록된 번호입니다.", Toast.LENGTH_SHORT).show();
-                    }
 
-                    else{
+        FirebaseAuth.getInstance().createUserWithEmailAndPassword(ID, password).addOnCompleteListener(new OnCompleteListener<AuthResult>() {
+            @Override
+            public void onComplete(@NonNull Task<AuthResult> task) {
+                if(task.isSuccessful()){
+                    Toast.makeText(getActivity(), "회원가입에 성공했습니다.", Toast.LENGTH_SHORT).show();
 
-                        Map<String, Object> childUpates = new HashMap<>();
-                        Map<String, Object> postValues = null;
-                        GuardianInfo post = new GuardianInfo(name,phoneNum,ID,password);
-                        postValues = post.toMap();
-                        childUpates.put("/Guardian_list/" + ID, postValues);
-                        mPostreference.updateChildren(childUpates);
-
-                        setSignupMode();
-                        Toast.makeText(getActivity(), "회원가입이 완료되었습니다!", Toast.LENGTH_SHORT).show();
-                        Intent intent = new Intent(getActivity(), MainActivity.class);
-                        startActivity(intent);
+                    FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+                    if(currentUser != null){
+                        FirebaseFirestore db = FirebaseFirestore.getInstance();
+                        DocumentReference userRef = db.collection("Users").document(currentUser.getUid());
+                        Map<String,Object> userInfo = new HashMap<>();
+                        userRef.set(userInfo, SetOptions.merge());
                     }
                 }
-                @Override
-                public void onCancelled(@NonNull DatabaseError error) {
-
-                }
-            });
-        }
+            }
+        });
+//        else{
+//            mPostreference.child("Guardian_list").addListenerForSingleValueEvent(new ValueEventListener() {
+//                @Override
+//                public void onDataChange(@NonNull DataSnapshot snapshot) {
+//                    if(snapshot.hasChild(ID)){
+//                        Toast.makeText(getActivity(), "이미 등록된 번호입니다.", Toast.LENGTH_SHORT).show();
+//                    }
+//
+//                    else{
+//
+//                        Map<String, Object> childUpates = new HashMap<>();
+//                        Map<String, Object> postValues = null;
+//                        GuardianInfo post = new GuardianInfo(name,phoneNum,ID,password);
+//                        postValues = post.toMap();
+//                        childUpates.put("/Guardian_list/" + ID, postValues);
+//                        mPostreference.updateChildren(childUpates);
+//
+//                        setSignupMode();
+//                        Toast.makeText(getActivity(), "회원가입이 완료되었습니다!", Toast.LENGTH_SHORT).show();
+//                        Intent intent = new Intent(getActivity(), MainActivity.class);
+//                        startActivity(intent);
+//                    }
+//                }
+//                @Override
+//                public void onCancelled(@NonNull DatabaseError error) {
+//
+//                }
+//            });
+//        }
     }
 }
