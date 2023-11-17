@@ -80,6 +80,8 @@ public class GuardianSignInActivity extends AppCompatActivity {
                                     if(getPassword.equals(passwordTxt)){
                                         Toast.makeText(GuardianSignInActivity.this, "로그인 성공!", Toast.LENGTH_SHORT).show();
                                         Intent intent = new Intent(GuardianSignInActivity.this, GuardianNotConnected.class);
+                                        //로그인 한 id 넘김
+                                        intent.putExtra("id",idTxt);
                                         startActivity(intent);
                                         finish();
                                     }

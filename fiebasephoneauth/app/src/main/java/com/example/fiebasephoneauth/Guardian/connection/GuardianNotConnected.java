@@ -23,12 +23,17 @@ public class GuardianNotConnected extends AppCompatActivity {
         binding = ActivityGuardianNotConnectedBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
 
+        //로그인 한 회원 id
+        Intent intent = getIntent();
+        String idTxt = intent.getStringExtra("id");
+
         // 연동하기 버튼
         Button getConnectButton = binding.getConnectButton;
 
         getConnectButton.setOnClickListener(v -> {
-            Intent intent = new Intent(GuardianNotConnected.this, GuardianGetConnection.class);
-            startActivity(intent);
+            Intent intent2 = new Intent(GuardianNotConnected.this, GuardianGetConnection.class);
+            intent2.putExtra("id",idTxt);
+            startActivity(intent2);
         });
     }
 }

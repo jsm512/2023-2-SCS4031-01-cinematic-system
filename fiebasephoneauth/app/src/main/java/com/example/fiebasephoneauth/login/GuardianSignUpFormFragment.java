@@ -1,5 +1,6 @@
 package com.example.fiebasephoneauth.login;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -121,6 +122,8 @@ public class GuardianSignUpFormFragment extends Fragment implements View.OnClick
                         @Override
                         public void onSuccess(Void unused) {
                             Toast.makeText(getActivity(), "회원가입 완료!", Toast.LENGTH_SHORT).show();
+                            Intent intent = new Intent(getActivity(), GuardianSignInActivity.class);
+                            startActivity(intent);
                         }
                     }).addOnFailureListener(new OnFailureListener() {
                         @Override

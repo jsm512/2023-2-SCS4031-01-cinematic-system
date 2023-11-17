@@ -14,6 +14,7 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.fiebasephoneauth.databinding.ActivityGuardianGetConnectionBinding;
 import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.FirebaseException;
 import com.google.firebase.auth.AuthResult;
@@ -21,9 +22,12 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.PhoneAuthCredential;
 import com.google.firebase.auth.PhoneAuthOptions;
 import com.google.firebase.auth.PhoneAuthProvider;
-import com.google.firebase.database.DatabaseReference;
-import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.firestore.DocumentReference;
+import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.FirebaseFirestore;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -32,10 +36,12 @@ import java.util.concurrent.TimeUnit;
  * 보호자가 계정 연동을 진행하는 페이지
  */
 public class GuardianGetConnection extends AppCompatActivity {
+    FirebaseFirestore db = FirebaseFirestore.getInstance();
 
-    DatabaseReference databaseReference = FirebaseDatabase.getInstance().getReferenceFromUrl("https://fir-phoneauth-97f7e-default-rtdb.firebaseio.com/");
     FirebaseAuth mAuth;
     String verificationID;
+    boolean check;
+    String idTxt;
 
     private ActivityGuardianGetConnectionBinding binding;
 
@@ -44,6 +50,10 @@ public class GuardianGetConnection extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         binding = ActivityGuardianGetConnectionBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
+
+        //피보호자 정보를 로그인 한 보호자 firestore db에 추가할 때 사용
+        Intent intent = getIntent();
+        String GuardianidTxt = intent.getStringExtra("id");
 
         // 레이아웃 요소들
         EditText nameForm = binding.nameForm;
@@ -55,9 +65,19 @@ public class GuardianGetConnection extends AppCompatActivity {
         Button singup_button = binding.signupButton;
         mAuth = FirebaseAuth.getInstance();
 
+        logoutText.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(GuardianGetConnection.this, GuardianNotConnected.class);
+                startActivity(intent);
+            }
+        });
         requestAuthNumButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                if(TextUtils.isEmpty((nameForm.getText().toString()))){
+                    Toast.makeText(GuardianGetConnection.this, "피보호자 ID를 입력해주세요.", Toast.LENGTH_SHORT).show();
+                }
                 if(TextUtils.isEmpty(phoneForm.getText().toString())){
                     Toast.makeText(GuardianGetConnection.this, "전화번호를 입력해주세요.", Toast.LENGTH_SHORT).show();
                 }
@@ -76,6 +96,45 @@ public class GuardianGetConnection extends AppCompatActivity {
                 }
                 else{
                     verifycode(phoneNumConfirmForm.getText().toString());
+                }
+            }
+        });
+        singup_button.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if(check){
+                    Intent intent = new Intent(GuardianGetConnection.this, GuardianConnected.class);
+                    idTxt = nameForm.getText().toString();
+
+                    /**
+                       입력받은 피보호자 id에 속한 모든 필드를 로그인한 보호자 필드에 추가하는 코드 작성 중
+                     */
+                    DocumentReference targetRef = db.collection("Guardian_list").document(GuardianidTxt);
+                    DocumentReference docRef = db.collection("CareReciver_list").document(idTxt);
+                    docRef.get().addOnSuccessListener(new OnSuccessListener<DocumentSnapshot>() {
+                        @Override
+                        public void onSuccess(DocumentSnapshot documentSnapshot) {
+                            if(documentSnapshot.exists()){
+                                Object value = documentSnapshot.get("Name");
+                                if(value != null){
+                                    Map<String,Object> newData = new HashMap<>();
+                                    newData.put("CareReceiverName",value);
+                                    targetRef.update(newData).addOnSuccessListener(new OnSuccessListener<Void>() {
+                                        @Override
+                                        public void onSuccess(Void unused) {
+
+                                        }
+                                    });
+                                }
+                            }
+                        }
+                    });
+                    intent.putExtra("id",GuardianidTxt);
+                    startActivity(intent);
+                    finish();
+                }
+                else{
+                    Toast.makeText(GuardianGetConnection.this, "연동을 먼저 해주세요!", Toast.LENGTH_SHORT).show();
                 }
             }
         });
@@ -133,14 +192,7 @@ public class GuardianGetConnection extends AppCompatActivity {
 
                         if(task.isSuccessful()){
                             Toast.makeText(GuardianGetConnection.this,"연동 성공",Toast.LENGTH_SHORT).show();
-
-                            Intent intent = new Intent(GuardianGetConnection.this, GuardianConnected.class);
-                            EditText nameForm = binding.nameForm;
-                            final String idTxt = nameForm.getText().toString();
-                            intent.putExtra("id",idTxt);
-                            startActivity(intent);
-                            finish();
-
+                            check = true;
                         }
 
                     }
