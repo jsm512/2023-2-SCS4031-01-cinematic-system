@@ -14,16 +14,9 @@ import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 
 import com.example.fiebasephoneauth.R;
-import com.google.android.gms.tasks.OnCompleteListener;
-import com.google.android.gms.tasks.Task;
-import com.google.firebase.auth.AuthResult;
-import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.auth.FirebaseUser;
-import com.google.firebase.database.DatabaseReference;
-import com.google.firebase.database.FirebaseDatabase;
-import com.google.firebase.firestore.DocumentReference;
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.firestore.FirebaseFirestore;
-import com.google.firebase.firestore.SetOptions;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -34,13 +27,9 @@ import java.util.Map;
  * 회원가입에서 보호자 버튼을 클릭했을 때 보여지는 입력 폼
  */
 public class GuardianSignUpFormFragment extends Fragment implements View.OnClickListener{
-    /**
-     * jsm512
-     * Firebase DB 보호자 정보 저장
-     */
-    private DatabaseReference mPostreference = FirebaseDatabase
-            .getInstance()
-            .getReference();
+
+    FirebaseFirestore db = FirebaseFirestore.getInstance();
+
 
     TextView userInfo;
     TextView nameText;
@@ -102,23 +91,6 @@ public class GuardianSignUpFormFragment extends Fragment implements View.OnClick
         signup_button.setEnabled(true);
     }
 
-//    public void postFirebaseDatabase(boolean add){
-//        mPostreference = FirebaseDatabase.getInstance().getReference();
-//        Map<String, Object> childUpates = new HashMap<>();
-//        Map<String, Object> postValues = null;
-//        if(add){
-//            GuardianInfo post = new GuardianInfo(name,phoneNum,ID,password,passwordConfirm);
-//            postValues = post.toMap();
-//        }
-//        childUpates.put("/Guardian_list/" + phoneNum, postValues);
-//        mPostreference.updateChildren(childUpates);
-//    }
-
-    /**
-     * isExistPhoneNum과 같은 DB에서 PhoneNum 검색 후
-     * 같은 PhoneNum이 존재하면 -> 회원가입 실패
-     * 등록된 PhoneNum이 존재하지 않으면 -> 회원가입 성공(화면 넘기기까지)
-     */
     @Override
     public void onClick(View v) {
         name = nameForm.getText().toString();
@@ -127,59 +99,36 @@ public class GuardianSignUpFormFragment extends Fragment implements View.OnClick
         password  = passwordForm.getText().toString();
         passwordConfirm = passwordConfirmForm.getText().toString();
 
+        Map<String,Object> user = new HashMap<>();
+        user.put("Name",name);
+        user.put("phoneNum",phoneNum);
+        user.put("ID",password);
+
+
         if (name.isEmpty() || phoneNum.isEmpty() || ID.isEmpty() || password.isEmpty() || passwordConfirm.isEmpty()){
             Toast.makeText(getActivity(), "사용자 정보를 모두 입력해주세요!", Toast.LENGTH_SHORT).show();
-            return;
+
         }
-        if(!password.equals(passwordConfirm)){
+        else if(!password.equals(passwordConfirm)){
             Toast.makeText(getActivity(), "비밀번호가 일치하지 않습니다.", Toast.LENGTH_SHORT).show();
-            return;
+
+        }
+        else {
+            db.collection("Guardian_list").document(ID)
+                    .set(user)
+                    .addOnSuccessListener(new OnSuccessListener<Void>() {
+                        @Override
+                        public void onSuccess(Void unused) {
+                            Toast.makeText(getActivity(), "회원가입 완료!", Toast.LENGTH_SHORT).show();
+                        }
+                    }).addOnFailureListener(new OnFailureListener() {
+                        @Override
+                        public void onFailure(@NonNull Exception e) {
+                            Toast.makeText(getActivity(), "회원가입 실패!", Toast.LENGTH_SHORT).show();
+                        }
+                    });
         }
 
-        FirebaseAuth.getInstance().createUserWithEmailAndPassword(ID, password).addOnCompleteListener(new OnCompleteListener<AuthResult>() {
-            @Override
-            public void onComplete(@NonNull Task<AuthResult> task) {
-                if(task.isSuccessful()){
-                    Toast.makeText(getActivity(), "회원가입에 성공했습니다.", Toast.LENGTH_SHORT).show();
-
-                    FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
-                    if(currentUser != null){
-                        FirebaseFirestore db = FirebaseFirestore.getInstance();
-                        DocumentReference userRef = db.collection("Users").document(currentUser.getUid());
-                        Map<String,Object> userInfo = new HashMap<>();
-                        userRef.set(userInfo, SetOptions.merge());
-                    }
-                }
-            }
-        });
-//        else{
-//            mPostreference.child("Guardian_list").addListenerForSingleValueEvent(new ValueEventListener() {
-//                @Override
-//                public void onDataChange(@NonNull DataSnapshot snapshot) {
-//                    if(snapshot.hasChild(ID)){
-//                        Toast.makeText(getActivity(), "이미 등록된 번호입니다.", Toast.LENGTH_SHORT).show();
-//                    }
-//
-//                    else{
-//
-//                        Map<String, Object> childUpates = new HashMap<>();
-//                        Map<String, Object> postValues = null;
-//                        GuardianInfo post = new GuardianInfo(name,phoneNum,ID,password);
-//                        postValues = post.toMap();
-//                        childUpates.put("/Guardian_list/" + ID, postValues);
-//                        mPostreference.updateChildren(childUpates);
-//
-//                        setSignupMode();
-//                        Toast.makeText(getActivity(), "회원가입이 완료되었습니다!", Toast.LENGTH_SHORT).show();
-//                        Intent intent = new Intent(getActivity(), MainActivity.class);
-//                        startActivity(intent);
-//                    }
-//                }
-//                @Override
-//                public void onCancelled(@NonNull DatabaseError error) {
-//
-//                }
-//            });
-//        }
     }
+
 }

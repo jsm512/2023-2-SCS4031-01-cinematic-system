@@ -1,6 +1,5 @@
 package com.example.fiebasephoneauth.login;
 
-import android.content.Intent;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -14,13 +13,10 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 
-import com.example.fiebasephoneauth.CareReceiverInfo;
 import com.example.fiebasephoneauth.R;
-import com.google.firebase.database.DataSnapshot;
-import com.google.firebase.database.DatabaseError;
-import com.google.firebase.database.DatabaseReference;
-import com.google.firebase.database.FirebaseDatabase;
-import com.google.firebase.database.ValueEventListener;
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.firebase.firestore.FirebaseFirestore;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -40,7 +36,7 @@ public class CareReceiverSignUpFormFragment extends Fragment implements View.OnC
      * jsm512
      * Firebase DB 피보호자 정보 저장
      */
-    private DatabaseReference mPostreference = FirebaseDatabase.getInstance().getReference();
+    private FirebaseFirestore db = FirebaseFirestore.getInstance();
 
 
     TextView userInfo;
@@ -118,11 +114,6 @@ public class CareReceiverSignUpFormFragment extends Fragment implements View.OnC
         signup_button.setEnabled(true);
     }
 
-    /**
-     * isExistPhoneNum() DB에서 PhoneNum 검색 후
-     * 같은 PhoneNum이 존재하면 -> 회원가입 실패
-     * 등록된 PhoneNum이 존재하지 않으면 -> 회원가입 성공
-     */
 
     @Override
     public void onClick(View v) {
@@ -134,42 +125,32 @@ public class CareReceiverSignUpFormFragment extends Fragment implements View.OnC
         password = passwordForm.getText().toString();
         passwordConfirm = passwordConfirmForm.getText().toString();
 
+        Map<String,Object> user = new HashMap<>();
+        user.put("Name",name);
+        user.put("phoneNum",phoneNum);
+        user.put("ID",password);
+        user.put("CareGiverName",careGiverName);
+        user.put("careGiverPhoneNum",careGiverPhoneNum);
+
         if (name.isEmpty() || phoneNum.isEmpty() || ID.isEmpty() || careGiverName.isEmpty()
                 || careGiverPhoneNum.isEmpty() || password.isEmpty() || passwordConfirm.isEmpty()) {
             Toast.makeText(getActivity(), "사용자 정보를 모두 입력해주세요!", Toast.LENGTH_SHORT).show();
         } else if (!password.equals(passwordConfirm)) {
             Toast.makeText(getActivity(), "비밀번호가 일치하지 않습니다.", Toast.LENGTH_SHORT).show();
         } else {
-            mPostreference.child("CareReceiver_list").addListenerForSingleValueEvent(new ValueEventListener() {
-                @Override
-                public void onDataChange(@NonNull DataSnapshot snapshot) {
-                    if(snapshot.hasChild(ID)){
-                        Toast.makeText(getActivity(), "이미 등록된 번호입니다.", Toast.LENGTH_SHORT).show();
-                    }
-
-                    else{
-
-                        Map<String, Object> childUpates = new HashMap<>();
-                        Map<String, Object> postValues = null;
-                        CareReceiverInfo post = new CareReceiverInfo(name,phoneNum,ID,password, careGiverName, careGiverPhoneNum);
-                        postValues = post.toMap();
-                        childUpates.put("/CareReceiver_list/" + ID, postValues);
-                        mPostreference.updateChildren(childUpates);
-
-                        setSignupMode();
-                        Toast.makeText(getActivity(), "회원가입이 완료되었습니다!", Toast.LENGTH_SHORT).show();
-                        Intent intent = new Intent(getActivity(), MainActivity.class);
-                        startActivity(intent);
-                    }
-                }
-
-                @Override
-                public void onCancelled(@NonNull DatabaseError error) {
-
-                }
-            });
-
-
+            db.collection("CareReciver_list").document(ID)
+                    .set(user)
+                    .addOnSuccessListener(new OnSuccessListener<Void>() {
+                        @Override
+                        public void onSuccess(Void unused) {
+                            Toast.makeText(getActivity(), "회원가입 완료!", Toast.LENGTH_SHORT).show();
+                        }
+                    }).addOnFailureListener(new OnFailureListener() {
+                        @Override
+                        public void onFailure(@NonNull Exception e) {
+                            Toast.makeText(getActivity(), "회원가입 실패!", Toast.LENGTH_SHORT).show();
+                        }
+                    });
         }
     }
 }
