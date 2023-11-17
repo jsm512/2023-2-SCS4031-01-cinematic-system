@@ -11,9 +11,7 @@ import androidx.fragment.app.FragmentTransaction;
 
 import com.example.fiebasephoneauth.R;
 import com.example.fiebasephoneauth.databinding.ActivityGuardianHomeBinding;
-import com.example.fiebasephoneauth.login.GuardianSignUpFormFragment;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
-import com.google.firebase.auth.FirebaseAuth;
 
 /**
  * <h3> Guardian Home Activity </h3>
@@ -33,6 +31,7 @@ public class GuardianHome extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+        //로그인 한 회원 id
         Intent intent = getIntent();
         String idTxt = intent.getStringExtra("id");
 

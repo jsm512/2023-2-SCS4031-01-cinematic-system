@@ -110,7 +110,7 @@ public class GuardianGetConnection extends AppCompatActivity {
                        입력받은 피보호자 id에 속한 모든 필드를 로그인한 보호자 필드에 추가하는 코드 작성 중
                      */
                     DocumentReference targetRef = db.collection("Guardian_list").document(GuardianidTxt);
-                    DocumentReference docRef = db.collection("CareReciver_list").document(idTxt);
+                    DocumentReference docRef = db.collection("CareReceiver_list").document(idTxt);
                     docRef.get().addOnSuccessListener(new OnSuccessListener<DocumentSnapshot>() {
                         @Override
                         public void onSuccess(DocumentSnapshot documentSnapshot) {

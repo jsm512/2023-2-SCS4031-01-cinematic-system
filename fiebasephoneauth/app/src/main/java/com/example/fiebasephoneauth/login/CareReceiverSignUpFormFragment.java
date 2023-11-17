@@ -1,5 +1,6 @@
 package com.example.fiebasephoneauth.login;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -128,7 +129,8 @@ public class CareReceiverSignUpFormFragment extends Fragment implements View.OnC
         Map<String,Object> user = new HashMap<>();
         user.put("Name",name);
         user.put("phoneNum",phoneNum);
-        user.put("ID",password);
+        user.put("ID",ID);
+        user.put("password",password);
         user.put("CareGiverName",careGiverName);
         user.put("careGiverPhoneNum",careGiverPhoneNum);
 
@@ -138,12 +140,14 @@ public class CareReceiverSignUpFormFragment extends Fragment implements View.OnC
         } else if (!password.equals(passwordConfirm)) {
             Toast.makeText(getActivity(), "비밀번호가 일치하지 않습니다.", Toast.LENGTH_SHORT).show();
         } else {
-            db.collection("CareReciver_list").document(ID)
+            db.collection("CareReceiver_list").document(ID)
                     .set(user)
                     .addOnSuccessListener(new OnSuccessListener<Void>() {
                         @Override
                         public void onSuccess(Void unused) {
                             Toast.makeText(getActivity(), "회원가입 완료!", Toast.LENGTH_SHORT).show();
+                            Intent intent = new Intent(getActivity(), CareReceiverSignInActivity.class);
+                            startActivity(intent);
                         }
                     }).addOnFailureListener(new OnFailureListener() {
                         @Override

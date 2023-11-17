@@ -12,6 +12,7 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.fiebasephoneauth.Guardian.connection.GuardianNotConnected;
+import com.example.fiebasephoneauth.Guardian.page.GuardianHome;
 import com.example.fiebasephoneauth.R;
 import com.example.fiebasephoneauth.databinding.ActivityGuardianSignInBinding;
 import com.google.android.gms.tasks.OnCompleteListener;
@@ -79,11 +80,22 @@ public class GuardianSignInActivity extends AppCompatActivity {
                                     final String getPassword = (String) document.getData().get("password");
                                     if(getPassword.equals(passwordTxt)){
                                         Toast.makeText(GuardianSignInActivity.this, "로그인 성공!", Toast.LENGTH_SHORT).show();
-                                        Intent intent = new Intent(GuardianSignInActivity.this, GuardianNotConnected.class);
-                                        //로그인 한 id 넘김
-                                        intent.putExtra("id",idTxt);
-                                        startActivity(intent);
-                                        finish();
+
+                                        if(document.getData().get("CareReceiverName").toString().isEmpty()){
+                                            Intent intent = new Intent(GuardianSignInActivity.this, GuardianNotConnected.class);
+                                            //로그인 한 id 넘김
+                                            intent.putExtra("id",idTxt);
+                                            startActivity(intent);
+                                            finish();
+                                        }
+                                        else{
+                                            Intent intent = new Intent(GuardianSignInActivity.this, GuardianHome.class);
+                                            //로그인 한 id 넘김
+                                            intent.putExtra("id",idTxt);
+                                            startActivity(intent);
+                                            finish();
+                                        }
+
                                     }
                                     else{
                                     Toast.makeText(GuardianSignInActivity.this, "비밀번호를 확인해주세요.", Toast.LENGTH_SHORT).show();
@@ -95,38 +107,6 @@ public class GuardianSignInActivity extends AppCompatActivity {
                             }
                         }
                     });
-//                    databaseReference.child("Guardian_list").addListenerForSingleValueEvent(new ValueEventListener() {
-//                        @Override
-//                        public void onDataChange(@NonNull DataSnapshot snapshot) {
-//
-//                            if(snapshot.hasChild(idTxt)){
-//
-//                                final String getPassword = snapshot.child(idTxt).child("password").getValue(String.class);
-//
-//                                if(getPassword.equals(passwordTxt)){
-//                                    Toast.makeText(GuardianSignInActivity.this, "로그인 성공 !", Toast.LENGTH_SHORT).show();
-//
-//                                    Intent intent = new Intent(GuardianSignInActivity.this, GuardianNotConnected.class);
-//                                    intent.putExtra("id",idTxt);
-//                                    startActivity(intent);
-//                                    finish();
-//                                }
-//
-//                                else{
-//                                    Toast.makeText(GuardianSignInActivity.this, "비밀번호를 확인해주세요.", Toast.LENGTH_SHORT).show();
-//                                }
-//                            }
-//                            else{
-//                                Toast.makeText(GuardianSignInActivity.this, "아이디를 확인해주세요.", Toast.LENGTH_SHORT).show();
-//                            }
-//
-//                        }
-//
-//                        @Override
-//                        public void onCancelled(@NonNull DatabaseError error) {
-//
-//                        }
-//                    });
                 }
 
             }
