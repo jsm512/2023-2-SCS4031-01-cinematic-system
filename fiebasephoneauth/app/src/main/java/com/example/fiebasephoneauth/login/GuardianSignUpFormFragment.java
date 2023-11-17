@@ -102,7 +102,8 @@ public class GuardianSignUpFormFragment extends Fragment implements View.OnClick
         Map<String,Object> user = new HashMap<>();
         user.put("Name",name);
         user.put("phoneNum",phoneNum);
-        user.put("ID",password);
+        user.put("ID",ID);
+        user.put("password",password);
 
 
         if (name.isEmpty() || phoneNum.isEmpty() || ID.isEmpty() || password.isEmpty() || passwordConfirm.isEmpty()){
