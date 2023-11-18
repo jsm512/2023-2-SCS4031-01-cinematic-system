@@ -81,7 +81,7 @@ public class GuardianSignInActivity extends AppCompatActivity {
                                     if(getPassword.equals(passwordTxt)){
                                         Toast.makeText(GuardianSignInActivity.this, "로그인 성공!", Toast.LENGTH_SHORT).show();
 
-                                        if(document.getData().get("CareReceiverName").toString().isEmpty()){
+                                        if(!document.contains("CareReceiverID")){
                                             Intent intent = new Intent(GuardianSignInActivity.this, GuardianNotConnected.class);
                                             //로그인 한 id 넘김
                                             intent.putExtra("id",idTxt);

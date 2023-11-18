@@ -115,10 +115,10 @@ public class GuardianGetConnection extends AppCompatActivity {
                         @Override
                         public void onSuccess(DocumentSnapshot documentSnapshot) {
                             if(documentSnapshot.exists()){
-                                Object value = documentSnapshot.get("Name");
+                                Object value = documentSnapshot.get("ID");
                                 if(value != null){
                                     Map<String,Object> newData = new HashMap<>();
-                                    newData.put("CareReceiverName",value);
+                                    newData.put("CareReceiverID",value);
                                     targetRef.update(newData).addOnSuccessListener(new OnSuccessListener<Void>() {
                                         @Override
                                         public void onSuccess(Void unused) {

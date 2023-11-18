@@ -1,9 +1,6 @@
 package com.example.fiebasephoneauth.Guardian.page;
 
-import static androidx.constraintlayout.helper.widget.MotionEffect.TAG;
-
 import android.os.Bundle;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -11,22 +8,18 @@ import android.widget.Button;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.fiebasephoneauth.R;
-import com.google.firebase.database.ChildEventListener;
-import com.google.firebase.database.DataSnapshot;
-import com.google.firebase.database.DatabaseError;
-import com.google.firebase.database.DatabaseReference;
-import com.google.firebase.database.FirebaseDatabase;
-import com.google.firebase.database.ValueEventListener;
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
+import com.google.firebase.firestore.DocumentReference;
+import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.FirebaseFirestore;
 
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Calendar;
 
 /**
  * <h3> 보호자의 홈 메인 페이지 </h3>
@@ -36,12 +29,13 @@ import java.util.Calendar;
  */
 public class GuardianMenuHomeFragment extends Fragment {
 
-    DatabaseReference databaseReference = FirebaseDatabase.getInstance().getReferenceFromUrl("https://fir-phoneauth-97f7e-default-rtdb.firebaseio.com/");
+    FirebaseFirestore db = FirebaseFirestore.getInstance();
 
     // 피보호자 정보
     TextView homeCareReceiverName, homeCareReceiverGenderAge, homeCareReceiverAddress;
     TextView  home_Outing_description, home_Activity_description;
     Button homeSeeDetailButton;
+    String getID;
     String getName;
     String getOuting;
     String getActivity_cnt;
@@ -86,124 +80,156 @@ public class GuardianMenuHomeFragment extends Fragment {
         recyclerViewNewNotification.setAdapter(Main_adapter);
 
 
-
+//        로그인 한 보호자 id 전달 받음
         Bundle bundle = getArguments();
         String idTxt = bundle.getString("id");
-        databaseReference.child("CareReceiver_list").addListenerForSingleValueEvent(new ValueEventListener() {
+
+        DocumentReference docRef = db.collection("Guardian_list").document(idTxt);
+        docRef.get().addOnCompleteListener(new OnCompleteListener<DocumentSnapshot>() {
             @Override
-            public void onDataChange(@NonNull DataSnapshot snapshot) {
-                if(snapshot.hasChild(idTxt)){
-                    getName = snapshot.child(idTxt).child("name").getValue(String.class);
-                    homeCareReceiverName.setText(getName);
-                    homeCareReceiverGenderAge.setText("남/72");
-                    homeCareReceiverAddress.setText("서울 중구 필동로 1길 30");
+            public void onComplete(@NonNull Task<DocumentSnapshot> task) {
+                if(task.isSuccessful()){
+                    DocumentSnapshot document = task.getResult();
+                    getID = (String) document.getData().get("CareReceiverID");
+                    DocumentReference targetRef = db.collection("CareReceiver_list").document(getID);
+                            targetRef.get().addOnCompleteListener(new OnCompleteListener<DocumentSnapshot>() {
+                                @Override
+                                public void onComplete(@NonNull Task<DocumentSnapshot> task) {
+                                    if(task.isSuccessful()){
+                                        DocumentSnapshot document = task.getResult();
+                                        getName = (String) document.getData().get("Name");
+//                                        추가할 회원 정보
+//                                        getAge = (String) document.getData().get("Age");
+//                                        getSex = (String) document.getData().get("Sex");
+//                                        getAddress = (String) document.getData().get("Address");
+                                        homeCareReceiverName.setText(getName);
+                                        homeCareReceiverGenderAge.setText("남/72");
+                                        homeCareReceiverAddress.setText("서울 중구 필동로 1길 30");
+                                    }
+                                }
+                            });
 
                 }
-            }
-            @Override
-            public void onCancelled(@NonNull DatabaseError error) {
-
             }
         });
 
 
-        databaseReference.child("CareReceiver_list").child(idTxt).child("ActivityData").addChildEventListener(new ChildEventListener() {
-            @Override
-            public void onChildAdded(@NonNull DataSnapshot snapshot, @Nullable String previousChildName) {
-            }
+//        databaseReference.child("CareReceiver_list").addListenerForSingleValueEvent(new ValueEventListener() {
+//            @Override
+//            public void onDataChange(@NonNull DataSnapshot snapshot) {
+//                if(snapshot.hasChild(idTxt)){
+//                    getName = snapshot.child(idTxt).child("name").getValue(String.class);
+//                    homeCareReceiverName.setText(getName);
+//                    homeCareReceiverGenderAge.setText("남/72");
+//                    homeCareReceiverAddress.setText("서울 중구 필동로 1길 30");
+//
+//                }
+//            }
+//            @Override
+//            public void onCancelled(@NonNull DatabaseError error) {
+//
+//            }
+//        });
 
-            @Override
-            public void onChildChanged(@NonNull DataSnapshot snapshot, @Nullable String previousChildName) {
-                if(snapshot.getKey().matches("외출")){
-                    Log.d(TAG, "외출: "+snapshot.getValue());
-                    if (snapshot.getValue().equals("0")){
-                        home_Outing_description.setText(getName+"님은 현재 외출 중 입니다.");
-
-                        Calendar calendar = Calendar.getInstance();
-                        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
-                        SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm:ss");
-                        String currentDate = dateFormat.format(calendar.getTime());
-                        String currentTime = timeFormat.format(calendar.getTime());
-
-                        NewNotificationData Data = new NewNotificationData(currentDate, currentTime, getName + "님이 외출을 시작하였습니다.");
-                        Main_dataList.add(0,Data);
-                        if (Main_dataList.size() > 4) {
-                            Main_dataList.remove(Main_dataList.size() - 1);
-                        }
-
-                    }
-                    else if (snapshot.getValue().equals("1")){
-                        home_Outing_description.setText(getName+"님은 현재 실내에 있습니다.");
-
-                        Calendar calendar = Calendar.getInstance();
-                        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
-                        SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm:ss");
-                        String currentDate = dateFormat.format(calendar.getTime());
-                        String currentTime = timeFormat.format(calendar.getTime());
-
-                        NewNotificationData Data = new NewNotificationData(currentDate, currentTime,getName+"님이 외출을 마쳤습니다.");
-                        Main_dataList.add(0,Data);
-                        if (Main_dataList.size() > 4) {
-                            Main_dataList.remove(Main_dataList.size() - 1);
-                        }
-                    }
-                }
-                else if(snapshot.getKey().matches("응급")){
-                    if (snapshot.getValue().equals("1")) {
-
-                        Calendar calendar = Calendar.getInstance();
-                        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
-                        SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm:ss");
-                        String currentDate = dateFormat.format(calendar.getTime());
-                        String currentTime = timeFormat.format(calendar.getTime());
-
-                        NewNotificationData Data = new NewNotificationData(currentDate, currentTime, getName + "님이 응급버튼을 눌렀습니다.");
-                        Main_dataList.add(0, Data);
-                        if (Main_dataList.size() > 4) {
-                            Main_dataList.remove(Main_dataList.size() - 1);
-                        }
-                    }
-                }
-                else if(snapshot.getKey().matches("화재")){
-
-                    if (snapshot.getValue().equals("1")) {
-
-                        Calendar calendar = Calendar.getInstance();
-                        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
-                        SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm:ss");
-                        String currentDate = dateFormat.format(calendar.getTime());
-                        String currentTime = timeFormat.format(calendar.getTime());
-
-                        NewNotificationData Data = new NewNotificationData(currentDate, currentTime, getName + "님이 화재가 발생했습니다.");
-                        Main_dataList.add(0, Data);
-                        if (Main_dataList.size() > 4) {
-                            Main_dataList.remove(Main_dataList.size() - 1);
-                        }
-                    }
-                }
-                else if(snapshot.getKey().matches("활동")){
-                    getActivity_cnt = snapshot.getValue().toString();
-                    home_Activity_description.setText("최근 24시간 동안 "+getActivity_cnt+"번의 활동 감지가 있었습니다");
-
-                }
-                Main_adapter.notifyDataSetChanged();
-            }
-
-            @Override
-            public void onChildRemoved(@NonNull DataSnapshot snapshot) {
-
-            }
-
-            @Override
-            public void onChildMoved(@NonNull DataSnapshot snapshot, @Nullable String previousChildName) {
-
-            }
-
-            @Override
-            public void onCancelled(@NonNull DatabaseError error) {
-
-            }
-        });
+//
+//
+//        databaseReference.child("CareReceiver_list").child(idTxt).child("ActivityData").addChildEventListener(new ChildEventListener() {
+//            @Override
+//            public void onChildAdded(@NonNull DataSnapshot snapshot, @Nullable String previousChildName) {
+//            }
+//
+//            @Override
+//            public void onChildChanged(@NonNull DataSnapshot snapshot, @Nullable String previousChildName) {
+//                if(snapshot.getKey().matches("외출")){
+//                    Log.d(TAG, "외출: "+snapshot.getValue());
+//                    if (snapshot.getValue().equals("0")){
+//                        home_Outing_description.setText(getName+"님은 현재 외출 중 입니다.");
+//
+//                        Calendar calendar = Calendar.getInstance();
+//                        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+//                        SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm:ss");
+//                        String currentDate = dateFormat.format(calendar.getTime());
+//                        String currentTime = timeFormat.format(calendar.getTime());
+//
+//                        NewNotificationData Data = new NewNotificationData(currentDate, currentTime, getName + "님이 외출을 시작하였습니다.");
+//                        Main_dataList.add(0,Data);
+//                        if (Main_dataList.size() > 4) {
+//                            Main_dataList.remove(Main_dataList.size() - 1);
+//                        }
+//
+//                    }
+//                    else if (snapshot.getValue().equals("1")){
+//                        home_Outing_description.setText(getName+"님은 현재 실내에 있습니다.");
+//
+//                        Calendar calendar = Calendar.getInstance();
+//                        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+//                        SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm:ss");
+//                        String currentDate = dateFormat.format(calendar.getTime());
+//                        String currentTime = timeFormat.format(calendar.getTime());
+//
+//                        NewNotificationData Data = new NewNotificationData(currentDate, currentTime,getName+"님이 외출을 마쳤습니다.");
+//                        Main_dataList.add(0,Data);
+//                        if (Main_dataList.size() > 4) {
+//                            Main_dataList.remove(Main_dataList.size() - 1);
+//                        }
+//                    }
+//                }
+//                else if(snapshot.getKey().matches("응급")){
+//                    if (snapshot.getValue().equals("1")) {
+//
+//                        Calendar calendar = Calendar.getInstance();
+//                        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+//                        SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm:ss");
+//                        String currentDate = dateFormat.format(calendar.getTime());
+//                        String currentTime = timeFormat.format(calendar.getTime());
+//
+//                        NewNotificationData Data = new NewNotificationData(currentDate, currentTime, getName + "님이 응급버튼을 눌렀습니다.");
+//                        Main_dataList.add(0, Data);
+//                        if (Main_dataList.size() > 4) {
+//                            Main_dataList.remove(Main_dataList.size() - 1);
+//                        }
+//                    }
+//                }
+//                else if(snapshot.getKey().matches("화재")){
+//
+//                    if (snapshot.getValue().equals("1")) {
+//
+//                        Calendar calendar = Calendar.getInstance();
+//                        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+//                        SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm:ss");
+//                        String currentDate = dateFormat.format(calendar.getTime());
+//                        String currentTime = timeFormat.format(calendar.getTime());
+//
+//                        NewNotificationData Data = new NewNotificationData(currentDate, currentTime, getName + "님이 화재가 발생했습니다.");
+//                        Main_dataList.add(0, Data);
+//                        if (Main_dataList.size() > 4) {
+//                            Main_dataList.remove(Main_dataList.size() - 1);
+//                        }
+//                    }
+//                }
+//                else if(snapshot.getKey().matches("활동")){
+//                    getActivity_cnt = snapshot.getValue().toString();
+//                    home_Activity_description.setText("최근 24시간 동안 "+getActivity_cnt+"번의 활동 감지가 있었습니다");
+//
+//                }
+//                Main_adapter.notifyDataSetChanged();
+//            }
+//
+//            @Override
+//            public void onChildRemoved(@NonNull DataSnapshot snapshot) {
+//
+//            }
+//
+//            @Override
+//            public void onChildMoved(@NonNull DataSnapshot snapshot, @Nullable String previousChildName) {
+//
+//            }
+//
+//            @Override
+//            public void onCancelled(@NonNull DatabaseError error) {
+//
+//            }
+//        });
 
         return view;
 
